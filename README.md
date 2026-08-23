@@ -124,6 +124,10 @@ echo f120 > ~/.local/state/workspace-hud/3.icon
 Which is handy for scripts: a build wrapper can label the workspace it is
 running in, and clear the label when it finishes.
 
+A name is shown as one line of plain text, with angle brackets removed and at
+most 64 characters, since the file is whatever was echoed into it rather than
+something this widget wrote.
+
 Names are not remembered across reboots any longer than the state directory
 is; nothing prunes them, so a name stays on a workspace until you clear it.
 

@@ -131,6 +131,23 @@ Panel {
     return Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, alpha)
   }
 
+  // What comes out of the state files is input, not our own text: anything on
+  // the system can write one, and the README invites exactly that.
+  //
+  // A Text with no textFormat is Text.AutoText, and Qt then decides for itself
+  // whether a string is markup. It renders one that looks like it as rich
+  // text, and rich text really loads <img src="http://...">: a request out of
+  // the shell process, to a host chosen by whoever wrote the file. The label
+  // is painted by the bar's own WidgetButton, so that element's textFormat is
+  // not ours to set; the markup has to be gone before the string reaches it.
+  //
+  // The length cap is the same thought from the other side. A name file holds
+  // whatever was echoed into it, and a bar label is no place for a megabyte of
+  // it. Collapsing whitespace goes with it: a name is one line.
+  function plain(value) {
+    return String(value || "").replace(/[<>]/g, "").replace(/\s+/g, " ").trim().slice(0, 64)
+  }
+
   // Which workspaces the row shows: the first `alwaysShown` of them whether
   // they exist or not, so the bar does not reflow as they come and go, plus
   // whatever else happens to exist.
@@ -167,7 +184,14 @@ Panel {
 
   function focusWorkspace(id) {
     if (!root.bar) return
-    root.bar.run("hyprctl dispatch " + Util.shellQuote("hl.dsp.focus({ workspace = \"" + id + "\" })"))
+
+    // bar.run hands this to a shell, and a workspace id comes from Hyprland
+    // rather than from here, so it is turned into a number before it is turned
+    // into a command. A value that is not one is not repaired, it is dropped.
+    var n = Math.trunc(Number(id))
+    if (!(n > 0)) return
+
+    root.bar.run("hyprctl dispatch " + Util.shellQuote("hl.dsp.focus({ workspace = \"" + n + "\" })"))
   }
 
   // Icons for the whole row. Kept apart from the focused workspace's own
@@ -203,7 +227,8 @@ Panel {
     model: root.indicatorIds
 
     delegate: FileView {
-      required property var modelData
+      // Typed, so what goes into the path below is a number and nothing else.
+      required property int modelData
 
       path: root.iconFilePath(modelData)
       watchChanges: true
@@ -234,13 +259,19 @@ Panel {
     var value = String(raw || "").trim()
     if (value === "") return ""
 
+    var glyph = ""
     var hex = value.match(/^(?:u\+|0x|\\u)?([0-9a-f]{4,6})$/i)
     if (hex) {
       var cp = parseInt(hex[1], 16)
-      if (cp > 0 && cp <= 0x10FFFF) return String.fromCodePoint(cp)
+      if (cp > 0 && cp <= 0x10FFFF) glyph = String.fromCodePoint(cp)
     }
 
-    return String.fromCodePoint(value.codePointAt(0))
+    if (glyph === "") glyph = String.fromCodePoint(value.codePointAt(0))
+
+    // An angle bracket is not an icon, and it is the one character that turns
+    // a bar label into rich text. Both ways in are covered: the glyph itself
+    // and its codepoint, u+003c. See plain().
+    return glyph === "<" || glyph === ">" ? "" : glyph
   }
 
   function save() {
@@ -251,7 +282,7 @@ Panel {
       'if [ -n "$2" ]; then printf "%s\\n" "$2" > "$1"; else rm -f -- "$1"; fi; ' +
       'if [ -n "$4" ]; then printf "%s\\n" "$4" > "$3"; else rm -f -- "$3"; fi',
       "sh",
-      root.nameFilePath(root.workspaceId), nameField.text.trim(),
+      root.nameFilePath(root.workspaceId), root.plain(nameField.text),
       root.iconFilePath(root.workspaceId), root.pickedIcon]
     writeProc.running = true
     close()
@@ -274,7 +305,7 @@ Panel {
     // text() is stale inside the change signal, so go around through reload()
     // and read it in onLoaded.
     onFileChanged: reload()
-    onLoaded: { root.workspaceName = text().trim(); root.seenNameRead = true }
+    onLoaded: { root.workspaceName = root.plain(text()); root.seenNameRead = true }
     onLoadFailed: { root.workspaceName = ""; root.seenNameRead = true }
   }
 
@@ -408,6 +439,7 @@ Panel {
 
       PanelSectionHeader {
         width: parent.width
+        textFormat: Text.PlainText
         text: "WORKSPACE " + root.workspaceId
         foreground: root.foreground
         fontFamily: root.fontFamily
@@ -502,6 +534,7 @@ Panel {
 
             Text {
               anchors.centerIn: parent
+              textFormat: Text.PlainText
               // The clearing cell is drawn dim: it is the way out of the row,
               // not one more thing in it.
               text: parent.clears ? "\u00d7" : parent.glyph
