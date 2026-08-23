@@ -124,6 +124,11 @@ echo f120 > ~/.local/state/workspace-hud/3.icon
 Which is handy for scripts: a build wrapper can label the workspace it is
 running in, and clear the label when it finishes.
 
+The directory is kept private to your account — mode 700, with 600 files —
+because what you call your workspaces says what you are working on. Your own
+scripts read and write it as freely as ever; other accounts on the machine do
+not. A directory you deliberately made a symlink is left as you set it up.
+
 A name is shown as one line of plain text, with angle brackets removed and at
 most 64 characters, since the file is whatever was echoed into it rather than
 something this widget wrote.

@@ -15,10 +15,11 @@ import qs.Ui
 // so a bar with this in it looks untouched until you start using it.
 //
 // Names and icons live one per file in $XDG_STATE_HOME/workspace-hud/<id> and
-// <id>.icon, plain text, no daemon and no database. Anything else on the
-// system can read the current name with a cat, and writing one from a script
-// is a redirect. Both files are watched, so the bar picks that up without
-// being told.
+// <id>.icon, plain text, no daemon and no database. Anything else you run can
+// read the current name with a cat, and writing one from a script is a
+// redirect. Both files are watched, so the bar picks that up without being
+// told. The directory is yours alone, though: what you call your workspaces
+// says what you are working on, so it is kept at 700 with 600 files.
 //
 // It can draw the workspace indicators as well, off by default. An icon is
 // only half useful on the workspace you are already on; the row of numbers is
@@ -275,15 +276,29 @@ Panel {
   }
 
   function save() {
-    // Each value is passed as an argument rather than spliced into the script,
-    // so a name with a quote or a backtick in it stays a name.
+    // The name and the icon travel in the environment, not in argv. Every
+    // argument of every running process is in /proc/PID/cmdline, which is
+    // world-readable on a stock kernel, so a second account on the machine
+    // that watches for this process reads what you called your workspace.
+    // /proc/PID/environ is owner-only, and the value is out of reach.
+    //
+    // Only the paths are left as arguments, and they are still arguments
+    // rather than text spliced into the script, so a name with a quote or a
+    // backtick in it stays a name.
+    writeProc.environment = ({
+      "WORKSPACE_HUD_NAME": root.plain(nameField.text),
+      "WORKSPACE_HUD_ICON": root.pickedIcon
+    })
     writeProc.command = ["sh", "-c",
-      'mkdir -p -- "$(dirname -- "$1")"; ' +
-      'if [ -n "$2" ]; then printf "%s\\n" "$2" > "$1"; else rm -f -- "$1"; fi; ' +
-      'if [ -n "$4" ]; then printf "%s\\n" "$4" > "$3"; else rm -f -- "$3"; fi',
+      // umask covers the file that is created here; the chmod covers the one a
+      // version before this wrote at 644 and that > only truncates.
+      'umask 077; ' +
+      'mkdir -p -m 700 -- "$(dirname -- "$1")" 2>/dev/null; ' +
+      'if [ -n "$WORKSPACE_HUD_NAME" ]; then printf "%s\\n" "$WORKSPACE_HUD_NAME" > "$1" && chmod 600 -- "$1"; else rm -f -- "$1"; fi; ' +
+      'if [ -n "$WORKSPACE_HUD_ICON" ]; then printf "%s\\n" "$WORKSPACE_HUD_ICON" > "$2" && chmod 600 -- "$2"; else rm -f -- "$2"; fi',
       "sh",
-      root.nameFilePath(root.workspaceId), root.plain(nameField.text),
-      root.iconFilePath(root.workspaceId), root.pickedIcon]
+      root.nameFilePath(root.workspaceId),
+      root.iconFilePath(root.workspaceId)]
     writeProc.running = true
     close()
   }
@@ -324,10 +339,30 @@ Panel {
 
   // FileView only watches a file it can resolve, and it cannot create the
   // directory the first name will be written into. Do that once at startup.
+  //
+  // And make it private while we are here. What you call your workspaces is a
+  // list of what you are working on — a client, a case number, an employer you
+  // have not told anyone about yet — and until now this directory was made at
+  // 755 with 644 files, so every account on the machine could read the lot.
+  // The chmod pass is for those older installs: mkdir leaves the mode of a
+  // directory that already exists alone, and so does a redirect into a file
+  // that already exists.
+  //
+  // A directory somebody deliberately made a symlink is left exactly as it is,
+  // modes included. Following it to chmod whatever is on the other end is the
+  // one thing this should not do, and refusing to run at all would break a
+  // setup that works.
   Process {
     id: ensureStateDir
     running: true
-    command: ["sh", "-c", 'mkdir -p -- "$1"', "sh", root.stateDir]
+    command: ["sh", "-c",
+      'dir=$1; ' +
+      '[ -L "$dir" ] && exit 0; ' +
+      'mkdir -p -m 700 -- "$dir" 2>/dev/null || exit 0; ' +
+      'chmod 700 -- "$dir" 2>/dev/null; ' +
+      'find "$dir" -maxdepth 1 -type f -exec chmod 600 -- {} + 2>/dev/null; ' +
+      'exit 0',
+      "sh", root.stateDir]
   }
 
   onOpenedChanged: {
