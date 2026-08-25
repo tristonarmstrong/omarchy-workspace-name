@@ -40,9 +40,9 @@ Panel {
   readonly property int barSize: bar ? bar.barSize : Style.bar.sizeHorizontal
 
   // Drawing the indicators means standing in for omarchy.workspaces, which is
-  // too big a thing to switch on for someone who installed a name widget. Off
-  // until asked for.
-  readonly property bool showIndicators: setting("indicators", false) === true
+  // too big a thing to switch on for someone who installed a name widget. On
+  // by default; set "indicators": false in shell.json to hide them.
+  readonly property bool showIndicators: setting("indicators", true) === true
   // An icon in place of the number keeps a button one character wide, the size
   // the stock indicators are built at. Keeping both reads as "icon 4" and has
   // to grow the button, which is a change to the shape of the bar.
@@ -77,7 +77,13 @@ Panel {
   readonly property string labelText: {
     if (showIndicators) return workspaceName
     if (hasIcon && hasName) return workspaceIcon + "  " + workspaceName
-    return hasIcon ? workspaceIcon : workspaceName
+    if (hasIcon) return workspaceIcon
+    if (workspaceName) return workspaceName
+    // Placeholder: show the workspace number so there is something to click
+    // on to open the naming panel.  Only after the initial file read, so the
+    // widget stays invisible during the brief load.
+    if (seenFirstRead && workspaceId > 0) return String(workspaceId)
+    return ""
   }
   readonly property bool hasLabel: labelText !== ""
 
@@ -103,9 +109,10 @@ Panel {
     onTriggered: root.flashing = false
   }
 
-  // Nothing to show without a name, an icon or a row of indicators, so the
-  // widget takes no room at all. The layout skips a hidden child, and
-  // WidgetButton hides itself on empty text, so this falls out on its own.
+  // Without a name, an icon or a row of indicators the widget shows only a
+  // workspace-number placeholder — big enough to click, small enough to stay
+  // out of the way.  The layout skips a hidden child, and WidgetButton hides
+  // itself on empty text, so both cases fall out on their own.
   implicitWidth: content.implicitWidth
   implicitHeight: content.implicitHeight
 
@@ -418,7 +425,10 @@ Panel {
           verticalPadding: 6
           fixedWidth: root.vertical ? root.barSize : (root.showNumbers ? -1 : Style.space(20))
           fixedHeight: root.barSize
-          onPressed: function(b) { root.focusWorkspace(parent.modelData) }
+          onPressed: function(b) {
+            if (b === Qt.RightButton || b === Qt.MiddleButton) root.open()
+            else root.focusWorkspace(parent.modelData)
+          }
         }
       }
     }
@@ -435,7 +445,10 @@ Panel {
       fixedWidth: root.vertical ? root.barSize : -1
       fixedHeight: root.barSize
       tooltipText: ""
-      onPressed: function(b) { root.toggle() }
+      onPressed: function(b) {
+        if (b === Qt.RightButton || b === Qt.MiddleButton) root.open()
+        else root.toggle()
+      }
     }
   }
 

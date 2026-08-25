@@ -20,7 +20,7 @@
     "allowMultiple": false,
     "defaultSection": "left",
     "defaults": {
-      "indicators": false,
+      "indicators": true,
       "numbers": false,
       "alwaysShown": 5
     },
@@ -29,7 +29,7 @@
         "key": "indicators",
         "type": "boolean",
         "label": "Draw the workspace indicators",
-        "defaultValue": false,
+        "defaultValue": true,
         "description": "A button per workspace, showing its icon where one is set and its number where none is. This stands in for the Workspaces widget rather than sitting beside it, so take that one out of the bar first."
       },
       {

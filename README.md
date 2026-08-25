@@ -6,17 +6,18 @@ name and an icon, and lets you set both.
 ![The widget in the bar: switching workspaces, and renaming one](demo.gif)
 
 Hyprland workspaces are numbered, and a number tells you where you are but not
-what you were doing there. This widget puts a short label next to the workspace
-indicators: `invoicing`, `bug #4412`, `reading`. Switch workspaces and the label
-follows.
+what you were doing there. This widget shows a row of workspace buttons with
+the current workspace's name or icon beside them: `invoicing`, `bug #4412`,
+`reading`. Switch workspaces and the label follows.
 
 A workspace can also carry an icon, on its own or in front of the name. An icon
 alone is often enough — a workspace can be the one with the terminals without
 also being called "terminals" — and it reads faster in the corner of your eye
 than a word does.
 
-Until a workspace has a name or an icon the widget takes up no room at all, so
-a bar with this in it looks untouched until you start using it.
+The widget draws a row of workspace number buttons by default, with the current
+workspace's name or icon beside them. Middle-click (or two-finger click on a
+trackpad) any workspace button to open the naming panel.
 
 ## Install
 
@@ -40,10 +41,12 @@ too.
 
 ## Use
 
-Click the label to open the panel. It holds a name field and, under it, a grid
-of icons. Fill in either, both, or neither, then press Enter to save. An empty
-name clears the name, the first cell of the grid (`×`) clears the icon, and
-clearing both makes the widget disappear again. Escape closes without saving.
+Workspace numbers appear on the bar by default. Middle-click (or two-finger
+click on a trackpad) any workspace button to open the naming panel. It holds a
+name field and, under it, a grid of icons. Fill in either, both, or neither,
+then press Enter to save. An empty name clears the name, the first cell of the
+grid (`×`) clears the icon, and clearing both hides the label. Escape closes
+without saving.
 
 The panel opens on the name, because renaming is what you came for on most
 days. Press Down to step into the grid and walk it with the arrow keys. Every
@@ -58,24 +61,14 @@ workspace is a kind of work rather than a logo. For anything the grid does not
 have, write the file directly. That takes a codepoint as readily as the glyph,
 which is covered below.
 
-Since a workspace with no name and no icon shows nothing, there is nothing to
-click on the first one you want to label, so bind a key to open the panel:
+You can also bind a key to open the panel directly:
 
 ```lua
 -- ~/.config/hypr/bindings.lua
 o.bind(hyper .. "R", "Workspace name", "omarchy-shell shell toggle jankeesvw.workspace-name")
 ```
 
-That is the way in, and it stays the faster way once names are everywhere.
-
-## Drawing the indicators too
-
-The widget can draw the row of workspace buttons as well. It is off until you
-ask for it, in the widget's entry in `~/.config/omarchy/shell.json`:
-
-```json
-{ "id": "jankeesvw.workspace-name", "indicators": true }
-```
+## Workspace indicators
 
 Each button carries the workspace's icon where one is set and its number where
 none is, and clicking one focuses that workspace. It stands in for the
@@ -91,6 +84,13 @@ The reason to want this: an icon on the workspace you are already standing on
 is only half useful, since the row of numbers is where you look to find the one
 you want. Feeding the row and the label from the same file is what keeps them
 from ever disagreeing.
+
+The indicators are on by default. To hide them, set `"indicators": false` in
+the widget's entry in `~/.config/omarchy/shell.json`:
+
+```json
+{ "id": "jankeesvw.workspace-name", "indicators": false }
+```
 
 ## Where names and icons are stored
 
