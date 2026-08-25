@@ -445,10 +445,7 @@ Panel {
       fixedWidth: root.vertical ? root.barSize : -1
       fixedHeight: root.barSize
       tooltipText: ""
-      onPressed: function(b) {
-        if (b === Qt.RightButton || b === Qt.MiddleButton) root.open()
-        else root.toggle()
-      }
+      onPressed: function(b) { root.toggle() }
     }
   }
 
