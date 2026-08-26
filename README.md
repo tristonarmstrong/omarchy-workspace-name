@@ -16,8 +16,8 @@ also being called "terminals" — and it reads faster in the corner of your eye
 than a word does.
 
 The widget draws a row of workspace number buttons by default, with the current
-workspace's name or icon beside them. Middle-click (or two-finger click on a
-trackpad) any workspace button to open the naming panel.
+workspace's name or icon beside them. Click the workspace you are already on to
+open the naming panel.
 
 ## Install
 
@@ -41,9 +41,10 @@ too.
 
 ## Use
 
-Workspace numbers appear on the bar by default. Middle-click (or two-finger
-click on a trackpad) any workspace button to open the naming panel. It holds a
-name field and, under it, a grid of icons. Fill in either, both, or neither,
+Workspace numbers appear on the bar by default. Clicking one takes you to that
+workspace, and clicking the one you are already on opens the naming panel,
+since there is nothing left to switch to. It holds a name field and, under it,
+a grid of icons. Fill in either, both, or neither,
 then press Enter to save. An empty name clears the name, the first cell of the
 grid (`×`) clears the icon, and clearing both hides the label. Escape closes
 without saving.
@@ -71,7 +72,8 @@ o.bind(hyper .. "R", "Workspace name", "omarchy-shell shell toggle jankeesvw.wor
 ## Workspace indicators
 
 Each button carries the workspace's icon where one is set and its number where
-none is, and clicking one focuses that workspace. It stands in for the
+none is. Clicking one focuses that workspace, and clicking the focused one
+opens the panel to name it. It stands in for the
 `omarchy.workspaces` widget rather than sitting beside it, so take that one out
 of the bar first.
 

@@ -97,6 +97,11 @@ Panel {
   property bool seenIconRead: false
   readonly property bool seenFirstRead: seenNameRead && seenIconRead
 
+  // The panel names the workspace it was opened on. Move to another one and
+  // it is aimed at a workspace you have left, its fields filling with someone
+  // else's name under your hands, so it closes instead of following along.
+  onWorkspaceIdChanged: if (opened) close()
+
   onLabelTextChanged: {
     if (!seenFirstRead) return
     flashing = true
@@ -425,8 +430,12 @@ Panel {
           verticalPadding: 6
           fixedWidth: root.vertical ? root.barSize : (root.showNumbers ? -1 : Style.space(20))
           fixedHeight: root.barSize
+          // Clicking the workspace you are already on has nothing to focus,
+          // so that click opens the panel instead. The button you are looking
+          // at is the one you want to name, and it takes the same plain left
+          // click as everything else on the bar.
           onPressed: function(b) {
-            if (b === Qt.RightButton || b === Qt.MiddleButton) root.open()
+            if (parent.focused) root.toggle()
             else root.focusWorkspace(parent.modelData)
           }
         }
